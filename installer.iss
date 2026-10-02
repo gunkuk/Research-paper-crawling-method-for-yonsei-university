@@ -1,5 +1,5 @@
 #define MyAppName "Yonsei Paper Downloader"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "gunkuk"
 #define MyAppExeName "Yonsei-Paper-Downloader.exe"
 
