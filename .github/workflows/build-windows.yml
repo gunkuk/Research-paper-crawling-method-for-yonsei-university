@@ -1,0 +1,77 @@
+name: Build Windows App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "paper_downloader_app.py"
+      - "download_papers.py"
+      - "installer.iss"
+      - "tests/**"
+      - ".github/workflows/build-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+          choco install innosetup --no-progress -y
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+
+      - name: Build executable
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name "Yonsei-Paper-Downloader" paper_downloader_app.py
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer.iss"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yonsei-Paper-Downloader-Windows
+          path: |
+            dist/Yonsei-Paper-Downloader.exe
+            installer/Yonsei-Paper-Downloader-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish latest Windows release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete windows-latest --cleanup-tag --yes 2>$null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f windows-latest
+          git push origin windows-latest --force
+          gh release create windows-latest "installer/Yonsei-Paper-Downloader-Setup.exe" "dist/Yonsei-Paper-Downloader.exe" --title "Yonsei Paper Downloader - Windows" --notes "Windows 설치파일입니다. 일반 사용자는 Yonsei-Paper-Downloader-Setup.exe를 다운로드해 설치하세요."
