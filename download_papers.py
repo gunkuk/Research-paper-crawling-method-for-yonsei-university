@@ -38,7 +38,7 @@ def load_env(path: str = ".env") -> None:
     if not env_path.exists():
         return
 
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+    for raw_line in env_path.read_text(encoding="utf-8-sig").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -256,7 +256,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="YSVPN 환경에서 Wiley/Elsevier 공식 API로 DOI 목록의 PDF를 다운로드합니다."
     )
-    parser.add_argument("--input", required=True, help="DOI 목록 텍스트 파일")
+    parser.add_argument("--input", default="doi_list.txt", help="DOI 목록 텍스트 파일 (기본값: doi_list.txt)")
     parser.add_argument("--output", default="downloads", help="PDF 저장 폴더")
     parser.add_argument(
         "--results",
