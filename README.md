@@ -135,16 +135,16 @@ ELSEVIER_API_KEY=발급받은_Elsevier_API_Key
 
 ```text
 # 한 줄에 DOI 하나
-10.1016/j.enbuild.2024.114000
-10.1002/example.12345
+10.1016/j.ibusrev.2010.09.002
+10.1002/asi.10389
 10.1111/example.12345
 ```
 
 다음 형태도 자동으로 정규화합니다.
 
 ```text
-https://doi.org/10.1016/j.enbuild.2024.114000
-doi:10.1002/example.12345
+https://doi.org/10.1016/j.ibusrev.2010.09.002
+doi:10.1002/asi.10389
 ```
 
 빈 줄과 `#`으로 시작하는 주석은 무시합니다.
