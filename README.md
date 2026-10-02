@@ -124,6 +124,9 @@ Copy-Item .env.example .env
 
 **중요: 아래 명령은 한 번에 여러 줄을 붙여넣지 말고, 한 줄씩 실행합니다.**
 
+또한 **아래 명령문 자체에 Wiley Token을 직접 붙여 넣는 것이 아닙니다.**  
+먼저 명령문을 그대로 실행한 뒤, PowerShell이 입력을 요청할 때 **그때 Token 값만 붙여넣습니다.**
+
 먼저 아래 한 줄을 PowerShell에 붙여넣고 Enter를 누릅니다.
 
 ```powershell
