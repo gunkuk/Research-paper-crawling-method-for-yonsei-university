@@ -7,6 +7,7 @@ import queue
 import threading
 import time
 import tkinter as tk
+from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
@@ -440,6 +441,7 @@ class PaperDownloaderApp:
                         f"[{index}/{total}] {result.doi}\n"
                         f"  {status}: {result.message}\n"
                     )
+                    self._append_diagnostic_file(result)
 
                 elif kind == "done":
                     _, total, downloaded, skipped = event
@@ -460,6 +462,24 @@ class PaperDownloaderApp:
             pass
 
         self.root.after(100, self._poll_events)
+
+    def _append_diagnostic_file(self, result) -> None:
+        """Persist provider diagnostics without ever writing API credentials."""
+        try:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            log_path = self.output_dir / "download_log.txt"
+            timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    f"{timestamp}\t"
+                    f"doi={result.doi}\t"
+                    f"provider={result.publisher}\t"
+                    f"status={result.status}\t"
+                    f"{result.message}\n"
+                )
+        except Exception:
+            # Diagnostic logging must never interrupt downloads.
+            pass
 
     def _append_log(self, text: str) -> None:
         self.log.configure(state="normal")
