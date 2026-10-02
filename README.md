@@ -58,33 +58,25 @@
 
 ## 4. 앱 설치
 
-### 4-1. 설치파일 다운로드
+### 현재 개발 테스트 단계
 
-아래 GitHub Releases 페이지에 접속합니다.
+현재 GitHub Releases의 설치파일은 기능 확인을 위한 **개발 테스트용 빌드**입니다.
 
 - https://github.com/gunkuk/Research-paper-crawling-method-for-yonsei-university/releases/latest
 
-**Assets**에서 다음 파일을 다운로드합니다.
+공인 코드서명이 없는 테스트 빌드이므로 Windows SmartScreen 경고가 표시될 수 있습니다. 따라서 일반 사용자에게는 이 방식을 최종 배포 경로로 사용하지 않습니다.
 
-```text
-Yonsei-Paper-Downloader-Setup.exe
-```
+### 최종 공개 배포
 
-### 4-2. 설치
+최종 버전은 **Microsoft Store의 서명된 MSIX 패키지**로 배포하는 것을 목표로 합니다.
 
-다운로드한 `Yonsei-Paper-Downloader-Setup.exe`를 더블클릭합니다.
+Store 게시가 완료되면 이 섹션을 Microsoft Store 설치 링크로 교체합니다.
 
-"Windows의 PC 보호" pop-up에서 
-'추가정보'를 누르면 실행 버튼이 생깁니다.
-
-실행 후, 설치가 완료되면 바탕화면에 다음 바로가기가 자동으로 만들어집니다.
+개발 테스트용 설치를 완료한 경우 바탕화면에 다음 바로가기가 만들어집니다.
 
 ```text
 Yonsei Paper Downloader
 ```
-
-> 이 설치파일은 개인 개발자가 배포하는 파일이므로 Windows에서 확인 메시지가 표시될 수 있습니다.  
-> 반드시 위 GitHub 저장소의 Releases에서 받은 파일인지 확인한 뒤 실행하십시오.
 
 ---
 
@@ -267,6 +259,10 @@ tests/                     단위 테스트
 ```
 
 GitHub Actions가 Windows에서 테스트 후 실행파일과 설치파일을 자동으로 빌드합니다.
+
+Microsoft Store 배포 절차는 [STORE_PUBLISHING.md](STORE_PUBLISHING.md)를 참고합니다.
+
+개인정보 처리방침은 [PRIVACY.md](PRIVACY.md)에 정리되어 있습니다.
 
 ---
 
