@@ -210,15 +210,27 @@ API Token/Key 발급, 프로그램 설치, 설정 작업은 다시 할 필요가
 
 ## 문제가 생겼을 때
 
-### 접근 권한 확인 필요
+### Wiley 403
 
-다음을 확인합니다.
+Wiley TDM API가 `403`을 반환하면 Wiley가 현재 TDM Token을 유효한 등록 Token으로 인정하지 않은 경우입니다.
 
-1. **YSVPN이 연결되어 있는지**
-2. Wiley TDM Token / Elsevier API Key가 정확한지
-3. 해당 논문이 연세대학교 구독 범위인지
+1. 앱의 **API 키 설정**에서 Wiley TDM Token이 최신 값인지 확인합니다.
+2. Wiley TDM 페이지에서 Token을 재발급한 경우 앱에도 새 Token을 다시 저장합니다.
+3. 이전 Token이 Windows 환경변수 등에 남아 있더라도 앱/로컬 설정의 최신 값을 사용하도록 구현되어 있습니다.
 
-앱의 **API 키 설정**에서 키를 다시 입력할 수 있습니다.
+### Wiley 404
+
+Wiley TDM API가 `404`를 반환하면 DOI 또는 해당 콘텐츠의 접근 권한을 확인합니다.
+
+기관 구독 콘텐츠라면 **YSVPN/교내 네트워크 연결 상태**도 확인합니다.
+
+### Elsevier 403
+
+Elsevier Article Retrieval API가 `403`을 반환한다고 해서 곧바로 "연세대학교가 해당 논문을 구독하지 않는다"는 뜻은 아닙니다.
+
+API Key 자체가 유효해도 **developer account, Article Retrieval resource 설정, TDM entitlement 또는 institutional authorization** 문제로 403이 발생할 수 있습니다.
+
+앱은 가능한 경우 Elsevier가 반환한 원문 오류 메시지도 함께 표시합니다.
 
 ### API 요청 제한
 
