@@ -2,20 +2,16 @@
 
 **Yonsei Paper Downloader**는 DOI 목록을 붙여넣으면 Wiley와 Elsevier의 공식 API를 통해 접근 권한이 있는 논문 PDF를 자동으로 내려받는 Windows 앱입니다.
 
-> 사용자는 코드를 수정하거나 CMD·PowerShell을 사용할 필요가 없습니다.  
-> **YSVPN 연결 → 앱 실행 → DOI 붙여넣기 → 다운로드 시작**만 하면 됩니다.
-
 ---
 
 ## 준비물
 
-처음 한 번만 아래 세 가지를 준비합니다.
+처음 한 번만 아래 설명에 따라 세 가지를 준비합니다.
 
 1. 연세대학교 **YSVPN**
 2. **Wiley TDM Token**
 3. **Elsevier API Key**
 
-앱 자체를 실행하기 위해 **VS Code, Python, Git은 필요하지 않습니다.**
 
 ---
 
@@ -78,7 +74,10 @@ Yonsei-Paper-Downloader-Setup.exe
 
 다운로드한 `Yonsei-Paper-Downloader-Setup.exe`를 더블클릭합니다.
 
-설치가 완료되면 바탕화면에 다음 바로가기가 자동으로 만들어집니다.
+"Windows의 PC 보호" pop-up에서 
+'추가정보'를 누르면 실행 버튼이 생깁니다.
+
+실행 후, 설치가 완료되면 바탕화면에 다음 바로가기가 자동으로 만들어집니다.
 
 ```text
 Yonsei Paper Downloader
@@ -128,24 +127,21 @@ API 키를 변경하려면 앱 오른쪽 위의 **API 키 설정** 버튼을 누
 10.1002/asi.10389
 ```
 
-Excel, 메모장, 논문 목록 등에서 DOI 여러 개를 복사한 뒤 앱에서:
+필요한 DOI는 일반적으로 GPT와 같은 자연어 모델에 아래의 명령을 입력하여 쉽게 구할 수 있습니다.
+"아래 논문들의 DOI를 다음과 같은 형식으로 list-up 해줘.
+10.1016/j.ibusrev.2010.09.002
+10.1002/asi.10389
+===
+(다운 받고자 하는 논문들의 설명)"
+
+이렇게 GPT, Excel, 메모장, 논문 목록 등에서 DOI 여러 개를 복사한 뒤 앱에서:
 
 ```text
 클립보드에서 붙여넣기
 ```
 
 버튼을 누르면 됩니다.
-
-직접 입력창에 붙여넣어도 됩니다.
-
-다음 형식도 자동으로 처리합니다.
-
-```text
-https://doi.org/10.xxxx/xxxxx
-doi:10.xxxx/xxxxx
-```
-
-중복 DOI는 한 번만 처리합니다.
+중복 DOI는 한 번만 처리됩니다.
 
 ---
 
