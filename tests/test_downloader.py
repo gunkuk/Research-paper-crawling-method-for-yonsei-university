@@ -121,6 +121,21 @@ class DownloaderTests(unittest.TestCase):
             else:
                 os.environ["WILEY_TDM_TOKEN"] = old
 
+    def test_detect_publisher_prefers_known_doi_prefixes(self):
+        with patch("download_papers._json_request", side_effect=AssertionError("Crossref should not be called")):
+            self.assertEqual(
+                download_papers.detect_publisher("10.1111/mice.12983"),
+                "wiley",
+            )
+            self.assertEqual(
+                download_papers.detect_publisher("10.1002/asi.10389"),
+                "wiley",
+            )
+            self.assertEqual(
+                download_papers.detect_publisher("10.1016/j.enpol.2013.12.068"),
+                "elsevier",
+            )
+
     def test_wiley_regression_uses_official_request_shape(self):
         response = FakeResponse(
             history=[
