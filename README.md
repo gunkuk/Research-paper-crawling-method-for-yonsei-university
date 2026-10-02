@@ -1,304 +1,335 @@
 # 연세대학교 VPN 기반 학술논문 자동 다운로드
 
-DOI 목록을 입력하면 **Wiley TDM API**와 **Elsevier Article Retrieval API**를 이용해 접근 권한이 있는 논문의 원문 PDF를 자동으로 저장하는 도구입니다.
+DOI 목록을 준비한 뒤 몇 개의 명령어만 복사해서 붙여넣으면, **Wiley**와 **Elsevier**의 공식 API를 통해 접근 권한이 있는 논문의 PDF를 자동으로 내려받는 도구입니다.
 
-> 핵심 흐름: **YSVPN 설치·연결 → Wiley/Elsevier API 발급 → API 키 입력 → DOI 목록 준비 → 자동 다운로드**
-
-이 저장소는 출판사 웹페이지를 크롤링하지 않습니다. Wiley와 Elsevier가 제공하는 **공식 API만 사용**하며, 다운로드 가능 여부는 본인의 기관 구독 권한과 각 출판사의 API 정책에 따릅니다.
+> 처음 사용하는 사람은 아래 **1번부터 7번까지 순서대로** 따라 하면 됩니다. 코드를 수정할 필요는 없습니다.
 
 ---
 
 ## 1. YSVPN 설치 및 연결
 
-연세대학교 정보통신처는 교외에서 YSVPN을 사용하면 논리적으로 교내 네트워크를 이용하는 것과 같은 환경을 제공한다고 안내합니다.
+교외에서 실행할 경우 먼저 연세대학교 VPN에 연결합니다.
 
-### 설치
-
-1. 아래 연세대학교 YSVPN 페이지에 접속합니다.
+1. 아래 페이지에 접속합니다.
    - https://ysvpn.yonsei.ac.kr
-2. 운영체제에 맞는 VPN 클라이언트를 다운로드하여 설치합니다.
-3. 자세한 설치 방법은 공식 사용자 매뉴얼을 따릅니다.
-   - https://ibook.yonsei.ac.kr/Viewer/ysvpn_user_manual
+2. 운영체제에 맞는 VPN 프로그램을 설치합니다.
+3. YSVPN을 실행합니다.
+4. **연세포탈 ID / 비밀번호**로 로그인합니다.
+5. VPN 연결을 유지한 상태로 다음 단계로 이동합니다.
 
-### 실행
-
-1. YSVPN 클라이언트를 실행합니다.
-2. **연세포탈 ID / 비밀번호**로 로그인합니다.
-3. VPN 연결이 완료된 상태에서 아래 다운로드 스크립트를 실행합니다.
-
-연세대학교 공식 안내:
-- https://ilis2.yonsei.ac.kr/ics/service/PolicyApplyInfo.do
-
-> VPN 프로그램 자체는 연세대학교가 배포하는 소프트웨어이므로 이 저장소에 포함하지 않습니다.
+설치 방법이 필요한 경우:
+- YSVPN 사용자 매뉴얼: https://ibook.yonsei.ac.kr/Viewer/ysvpn_user_manual
+- 연세대학교 공식 안내: https://ilis2.yonsei.ac.kr/ics/service/PolicyApplyInfo.do
 
 ---
 
-## 2. Wiley TDM API 발급
+## 2. Wiley TDM Token 발급
 
-Wiley는 기관 구독자가 TDM(Text and Data Mining) 목적으로 구독 원문을 API로 내려받을 수 있는 공식 서비스를 제공합니다.
-
-1. 아래 Wiley TDM 페이지에 접속합니다.
+1. 아래 Wiley 페이지에 접속합니다.
    - https://onlinelibrary.wiley.com/library-info/resources/text-and-datamining
 2. Wiley 계정으로 로그인합니다.
-3. **Get a Text and Data Mining Token**에서 이용조건에 동의합니다.
-4. 발급된 **Wiley TDM Token**을 복사합니다.
+3. **Get a Text and Data Mining Token**을 선택하고 이용조건에 동의합니다.
+4. 발급된 **Wiley TDM Token**을 복사해 둡니다.
 
-Wiley 공식 API 형식:
-
-```text
-https://api.wiley.com/onlinelibrary/tdm/v1/articles/<DOI>
-```
-
-요청 헤더:
-
-```text
-Wiley-TDM-Client-Token: <YOUR_TOKEN>
-```
-
-Wiley는 TDM 서비스에 대해 **60 requests / 10 minutes** 제한을 안내하고 있으므로, 이 프로그램은 Wiley 요청 사이에 기본 **10초 간격**을 둡니다.
+발급된 Token은 아래 5단계에서 그대로 붙여넣으면 됩니다.
 
 ---
 
-## 3. Elsevier API 발급
+## 3. Elsevier API Key 발급
 
-1. Elsevier Developer Portal에 접속합니다.
+1. 아래 Elsevier Developer Portal에 접속합니다.
    - https://dev.elsevier.com/
-2. 로그인 후 API Key를 생성합니다.
-3. 발급된 **Elsevier API Key**를 복사합니다.
+2. 로그인합니다.
+3. API Key를 생성합니다.
+4. 발급된 **Elsevier API Key**를 복사해 둡니다.
 
-Elsevier Article Retrieval API:
-
-```text
-https://api.elsevier.com/content/article/doi/<DOI>
-```
-
-요청 헤더:
-
-```text
-X-ELS-APIKey: <YOUR_API_KEY>
-Accept: application/pdf
-```
-
-Elsevier는 ScienceDirect 구독 기관 네트워크에서 요청할 경우 기관의 원문 접근 권한을 확인하여 full text를 제공합니다. 따라서 **YSVPN 연결 후 실행**하는 것을 전제로 합니다.
-
-단, YSVPN 연결 상태라도 Elsevier에서 기관 entitlement를 인식하지 못하거나 해당 논문이 구독 대상이 아니면 다운로드가 거부될 수 있습니다.
+발급된 API Key는 아래 5단계에서 그대로 붙여넣으면 됩니다.
 
 ---
 
 ## 4. 저장소 다운로드
 
-```bash
+### 4-1. CMD 열기
+
+1. 키보드에서 **Windows 키**를 누릅니다.
+2. `cmd`를 입력합니다.
+3. **명령 프롬프트**를 실행합니다.
+
+### 4-2. 저장소 다운로드
+
+아래 두 줄을 **한 줄씩 복사해서 CMD에 붙여넣고 Enter**를 누릅니다.
+
+```cmd
 git clone https://github.com/gunkuk/Research-paper-crawling-method-for-yonsei-university.git
 cd Research-paper-crawling-method-for-yonsei-university
 ```
 
-추가 Python 패키지는 필요하지 않습니다.
+정상적으로 실행되면 현재 위치가 이 저장소 폴더로 바뀝니다.
 
-권장 Python:
+### 4-3. Python 확인
 
-```text
-Python 3.10+
+아래 명령을 입력합니다.
+
+```cmd
+python --version
 ```
+
+`Python 3.10` 이상이 표시되면 그대로 진행합니다.
+
+#### "python을 찾을 수 없습니다"라고 나오면
+
+아래 명령을 CMD에 붙여넣습니다.
+
+```cmd
+winget install -e --id Python.Python.3.12
+```
+
+설치가 끝나면 **CMD를 닫았다가 다시 열고**, 다시 저장소 폴더로 이동한 뒤 진행합니다.
+
+#### "git을 찾을 수 없습니다"라고 나오면
+
+아래 명령을 CMD에 붙여넣습니다.
+
+```cmd
+winget install -e --id Git.Git
+```
+
+설치가 끝나면 **CMD를 닫았다가 다시 열고 4-2부터 다시 진행**합니다.
 
 ---
 
 ## 5. API 키 입력
 
-예제 설정 파일을 복사합니다.
+파일을 직접 열어 수정할 필요가 없습니다.
 
-### Windows PowerShell
+### 5-1. CMD에서 PowerShell로 전환
+
+방금 사용하던 CMD 창에 아래 명령을 입력하고 Enter를 누릅니다.
+
+```cmd
+powershell
+```
+
+명령줄 앞부분이 `PS`로 시작하면 정상입니다.
+
+### 5-2. 설정 파일 생성
+
+아래 명령을 붙여넣고 Enter를 누릅니다.
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-### macOS / Linux
+### 5-3. Wiley Token과 Elsevier API Key 입력
 
-```bash
-cp .env.example .env
+아래 **세 줄 전체를 한 번에 복사해서 PowerShell에 붙여넣고 Enter**를 누릅니다.
+
+```powershell
+$wiley = Read-Host "Wiley TDM Token을 붙여넣고 Enter"
+$elsevier = Read-Host "Elsevier API Key를 붙여넣고 Enter"
+"WILEY_TDM_TOKEN=$wiley`nELSEVIER_API_KEY=$elsevier" | Set-Content .env -Encoding UTF8
 ```
 
-그다음 `.env` 파일을 열어 발급받은 값을 입력합니다.
+먼저 다음 문구가 나타납니다.
 
 ```text
-WILEY_TDM_TOKEN=발급받은_Wiley_TDM_Token
-ELSEVIER_API_KEY=발급받은_Elsevier_API_Key
+Wiley TDM Token을 붙여넣고 Enter:
 ```
 
-**중요:** `.env`는 Git에 업로드되지 않도록 `.gitignore`에 등록되어 있습니다.
+→ **2단계에서 발급받은 Wiley Token을 붙여넣고 Enter**
+
+그다음:
+
+```text
+Elsevier API Key를 붙여넣고 Enter:
+```
+
+→ **3단계에서 발급받은 Elsevier API Key를 붙여넣고 Enter**
+
+이제 API 설정은 끝입니다.
+
+> Token과 API Key는 비밀번호처럼 취급하십시오. 생성된 `.env` 파일은 GitHub에 올라가지 않도록 설정되어 있습니다.
 
 ---
 
-## 6. DOI 목록 입력
+## 6. DOI 목록 넣기
 
-`doi_list.example.txt`를 복사하여 `doi_list.txt`를 만듭니다.
+DOI는 **한 줄에 하나씩** 준비합니다.
+
+예:
 
 ```text
-# 한 줄에 DOI 하나
 10.1016/j.ibusrev.2010.09.002
 10.1002/asi.10389
-10.1111/example.12345
 ```
 
-다음 형태도 자동으로 정규화합니다.
+### 가장 쉬운 방법
 
-```text
-https://doi.org/10.1016/j.ibusrev.2010.09.002
-doi:10.1002/asi.10389
+1. Excel, 메모장 등에서 DOI 목록을 **한 줄에 하나씩** 준비합니다.
+2. DOI 목록 전체를 선택해서 **Ctrl+C**로 복사합니다.
+3. 다시 PowerShell 창으로 돌아옵니다.
+4. 아래 한 줄을 붙여넣고 Enter를 누릅니다.
+
+```powershell
+Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
 ```
 
-빈 줄과 `#`으로 시작하는 주석은 무시합니다.
+끝입니다. 복사해 둔 DOI 목록이 자동으로 `doi_list.txt`에 저장됩니다.
+
+> DOI 앞에 `https://doi.org/`가 붙어 있어도 프로그램이 자동으로 처리합니다.
 
 ---
 
-## 7. 자동 다운로드
+## 7. 논문 자동 다운로드
 
-반드시 **YSVPN을 먼저 연결한 뒤** 실행합니다.
+### 7-1. YSVPN 연결 확인
 
-```bash
-python download_papers.py --input doi_list.txt --output downloads
+다운로드를 시작하기 전에 **YSVPN이 연결되어 있는지 다시 확인**합니다.
+
+### 7-2. 실행
+
+PowerShell에 아래 한 줄만 입력합니다.
+
+```powershell
+python download_papers.py
 ```
 
-프로그램은 각 DOI에 대해:
+이제 프로그램이 DOI 목록을 순서대로 확인하고 Wiley 또는 Elsevier의 공식 API를 통해 다운로드를 진행합니다.
 
-1. Crossref에서 출판사 확인
-2. Wiley 또는 Elsevier로 분류
-3. 해당 출판사의 공식 API 호출
-4. 접근 권한이 확인되면 PDF 저장
-5. 처리 결과를 `download_results.csv`에 기록
-
-합니다.
-
-기본 출력 폴더:
+화면에는 다음처럼 진행 상황이 표시됩니다.
 
 ```text
-downloads/
+[1/20] 10.xxxx/xxxxx
+  출판사: elsevier
+  -> downloaded: 정상 다운로드
 ```
 
-파일 예:
+### 7-3. 다운로드된 PDF 열기
 
-```text
-downloads/
-├─ 10.1016__j.enbuild.2024.114000.pdf
-└─ 10.1002__example.12345.pdf
+작업이 끝나면 아래 명령을 입력합니다.
+
+```powershell
+explorer downloads
 ```
+
+`downloads` 폴더가 열리고 다운로드된 PDF를 확인할 수 있습니다.
 
 ---
 
-## 8. 먼저 소량으로 테스트
+## 8. 결과가 제대로 내려받아졌는지 확인
 
-처음에는 DOI 1~2개만 테스트하는 것을 권장합니다.
+PDF는 다음 폴더에 저장됩니다.
 
-```bash
-python download_papers.py --input doi_list.txt --output downloads --max 2
+```text
+downloads
 ```
 
-실제 다운로드 없이 출판사 분류만 확인:
+전체 처리 결과는 다음 파일에도 기록됩니다.
 
-```bash
-python download_papers.py --input doi_list.txt --dry-run
+```text
+download_results.csv
 ```
 
-이미 다운로드된 PDF는 기본적으로 다시 받지 않습니다.
+주요 결과는 다음과 같습니다.
 
-다시 받으려면:
-
-```bash
-python download_papers.py --input doi_list.txt --output downloads --overwrite
-```
-
----
-
-## 9. 결과 확인
-
-실행이 끝나면 `download_results.csv`에 결과가 기록됩니다.
-
-| 항목 | 의미 |
+| 화면에 표시되는 상태 | 의미 |
 |---|---|
-| `downloaded` | 정상 다운로드 |
-| `skipped` | 이미 파일이 존재함 |
-| `unsupported` | Wiley/Elsevier 논문이 아님 |
-| `not_found` | API에서 DOI를 찾지 못함 |
-| `forbidden` | 기관 구독/API 권한 없음 |
-| `rate_limited` | API 호출 한도 초과 |
-| `error` | 기타 오류 |
+| `downloaded` | PDF 다운로드 성공 |
+| `skipped` | 이미 받은 PDF라서 건너뜀 |
+| `unsupported` | Wiley 또는 Elsevier 논문이 아님 |
+| `not_found` | DOI를 찾지 못함 |
+| `forbidden` | API Key, 기관 구독 또는 접근 권한 문제 |
+| `rate_limited` | 출판사 API의 요청 횟수 제한에 걸림 |
+| `error` | 그 밖의 오류 |
 
 ---
 
-## 10. 자주 발생하는 문제
+## 9. 문제가 생겼을 때
 
-### Elsevier가 403을 반환함
+### `forbidden`이 나오는 경우
 
-다음을 확인합니다.
+다음을 차례로 확인합니다.
 
-1. YSVPN이 실제로 연결되어 있는지
-2. 해당 논문이 연세대학교 ScienceDirect 구독 범위인지
-3. Elsevier API Key가 정확한지
-4. Elsevier가 현재 접속을 기관 네트워크로 인식하는지
+1. **YSVPN이 연결되어 있는지**
+2. Wiley TDM Token 또는 Elsevier API Key를 정확히 입력했는지
+3. 해당 논문이 연세대학교 구독 범위에 포함되는지
 
-Elsevier 공식 문서에 따르면 full API access는 해당 제품을 구독하는 기관의 네트워크에서 제공됩니다.
+VPN을 다시 연결한 뒤 `python download_papers.py`를 다시 실행해도 됩니다.
 
-### Wiley가 403을 반환함
+이미 성공적으로 받은 PDF는 자동으로 건너뜁니다.
 
-다음을 확인합니다.
+### `rate_limited`가 나오는 경우
 
-1. 일반 Wiley API Key가 아니라 **Wiley TDM Token**을 사용했는지
-2. TDM 약관 동의를 완료했는지
-3. 기관이 해당 Wiley 콘텐츠를 구독하는지
+출판사에서 허용한 API 요청 횟수를 초과한 것입니다.
 
-### Wiley가 429를 반환함
+잠시 후 아래 명령을 다시 실행하면 됩니다.
 
-공식 요청 제한을 초과한 것입니다. 프로그램 기본값은 Wiley 문서에 맞춰 요청 사이에 10초 간격을 둡니다.
+```powershell
+python download_papers.py
+```
 
----
+이미 받은 파일은 다시 다운로드하지 않습니다.
 
-## 파일 구성
+### DOI 목록을 바꾸고 싶은 경우
 
-```text
-.
-├─ README.md
-├─ download_papers.py
-├─ .env.example
-├─ doi_list.example.txt
-├─ .gitignore
-├─ LICENSE
-└─ tests/
-   └─ test_downloader.py
+새 DOI 목록을 한 줄씩 준비해 **Ctrl+C**로 복사한 뒤 다시 아래 명령을 실행합니다.
+
+```powershell
+Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
+```
+
+그다음 다시:
+
+```powershell
+python download_papers.py
 ```
 
 ---
 
-## 테스트
+## 10. 다음부터 다시 사용할 때
 
-```bash
-python -m unittest discover -s tests -v
+처음 설치를 모두 끝낸 뒤에는 **2~5단계를 다시 할 필요가 없습니다.**
+
+다음부터는 아래 순서만 반복하면 됩니다.
+
+1. **YSVPN 연결**
+2. CMD 실행
+3. 저장소 폴더로 이동
+4. `powershell` 입력
+5. 새 DOI 목록을 복사
+6. 아래 두 명령 실행
+
+```powershell
+Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
+python download_papers.py
 ```
 
-테스트는 실제 API Key 없이 URL 생성, DOI 정규화, 출판사 분류 로직 등을 확인합니다.
+다운로드 폴더 열기:
+
+```powershell
+explorer downloads
+```
 
 ---
 
 ## 주의사항
 
 - 본인의 연세대학교 계정과 기관 구독 권한 범위에서 사용하십시오.
-- API 키와 TDM Token을 GitHub에 업로드하지 마십시오.
-- Wiley/Elsevier 웹페이지 자체를 자동 크롤링하지 않습니다.
-- 각 출판사의 API 호출 한도와 TDM 이용조건을 준수해야 합니다.
-- 다운로드된 원문의 이용·저장·분석·공유 범위는 각 라이선스 조건에 따릅니다.
+- Wiley TDM Token과 Elsevier API Key를 다른 사람과 공유하지 마십시오.
+- 다운로드된 원문의 이용·저장·분석·공유 범위는 해당 출판사와 기관의 라이선스 조건을 따라야 합니다.
+- 프로그램은 Wiley와 Elsevier의 공식 API를 사용하며, 출판사 웹페이지 자체를 크롤링하지 않습니다.
 
 ---
 
-## 공식 문서
+## 공식 링크
 
 ### 연세대학교
-- YSVPN 안내: https://ilis2.yonsei.ac.kr/ics/service/PolicyApplyInfo.do
 - YSVPN 접속: https://ysvpn.yonsei.ac.kr
 - YSVPN 사용자 매뉴얼: https://ibook.yonsei.ac.kr/Viewer/ysvpn_user_manual
+- YSVPN 공식 안내: https://ilis2.yonsei.ac.kr/ics/service/PolicyApplyInfo.do
 
 ### Wiley
 - Wiley Text and Data Mining: https://onlinelibrary.wiley.com/library-info/resources/text-and-datamining
 
 ### Elsevier
 - Elsevier Developer Portal: https://dev.elsevier.com/
-- Article Retrieval API: https://dev.elsevier.com/documentation/ArticleRetrievalAPI.wadl
-- Text Mining API 안내: https://dev.elsevier.com/tecdoc_text_mining.html
