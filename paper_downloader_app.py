@@ -14,7 +14,7 @@ from tkinter import filedialog, messagebox, ttk
 import download_papers as engine
 
 APP_NAME = "Yonsei Paper Downloader"
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 CONFIG_DIR = Path(os.getenv("APPDATA", str(Path.home()))) / "YonseiPaperDownloader"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 DEFAULT_OUTPUT_DIR = Path.home() / "Downloads" / "Yonsei Paper Downloader"
