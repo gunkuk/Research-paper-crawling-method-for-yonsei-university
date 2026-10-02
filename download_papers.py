@@ -130,15 +130,37 @@ def _json_request(url: str, timeout: int = 30) -> dict[str, Any]:
 
 
 def detect_publisher(doi: str) -> str:
-    encoded = urllib.parse.quote(doi, safe="")
+    """Route well-known publisher DOI prefixes before consulting mutable metadata.
+
+    Journal ownership/hosting can change over time. For example, some legacy
+    Wiley DOIs may currently expose Elsevier as the journal publisher in
+    metadata even though Wiley's TDM endpoint still serves the DOI.
+    """
+    normalized = normalize_doi(doi).lower()
+
+    wiley_prefixes = (
+        "10.1002/",
+        "10.1111/",
+        "10.1046/",
+    )
+    elsevier_prefixes = (
+        "10.1016/",
+    )
+
+    if normalized.startswith(wiley_prefixes):
+        return "wiley"
+    if normalized.startswith(elsevier_prefixes):
+        return "elsevier"
+
+    encoded = urllib.parse.quote(normalized, safe="")
     data = _json_request(f"{CROSSREF_API}/{encoded}")
     publisher = str(data.get("message", {}).get("publisher", "")).strip()
     lower = publisher.lower()
 
-    if "elsevier" in lower:
-        return "elsevier"
     if "wiley" in lower or "john wiley" in lower:
         return "wiley"
+    if "elsevier" in lower:
+        return "elsevier"
 
     return "unsupported"
 
