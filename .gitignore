@@ -1,6 +1,9 @@
 __pycache__/
 *.py[cod]
-*.csv
+.env
+downloads/
+download_results.csv
+*.part
 .DS_Store
 .vscode/
 .idea/
