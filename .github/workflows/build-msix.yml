@@ -1,0 +1,93 @@
+name: Build Store MSIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      identity_name:
+        description: "Partner Center > Product identity의 Package/Identity/Name"
+        required: true
+        type: string
+      publisher:
+        description: "Partner Center > Product identity의 Package/Identity/Publisher"
+        required: true
+        type: string
+      publisher_display_name:
+        description: "Store에 표시할 게시자 이름"
+        required: true
+        default: "Gun Kuk"
+        type: string
+      version:
+        description: "MSIX 버전 (예: 1.0.0.0)"
+        required: true
+        default: "1.0.0.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller pillow
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+
+      - name: Build Windows executable
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name "Yonsei-Paper-Downloader" paper_downloader_app.py
+
+      - name: Prepare MSIX layout
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "msix-package\Assets" | Out-Null
+          Copy-Item "dist\Yonsei-Paper-Downloader.exe" "msix-package\Yonsei-Paper-Downloader.exe"
+          python scripts/generate_msix_assets.py "msix-package\Assets"
+          python scripts/render_msix_manifest.py `
+            --template "msix\AppxManifest.template.xml" `
+            --output "msix-package\AppxManifest.xml" `
+            --identity-name "${{ inputs.identity_name }}" `
+            --publisher "${{ inputs.publisher }}" `
+            --publisher-display-name "${{ inputs.publisher_display_name }}" `
+            --display-name "Yonsei Paper Downloader" `
+            --version "${{ inputs.version }}"
+
+      - name: Build unsigned Store MSIX
+        shell: pwsh
+        run: |
+          $makeAppx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (-not $makeAppx) {
+            throw "makeappx.exe not found"
+          }
+
+          New-Item -ItemType Directory -Force -Path "store-package" | Out-Null
+          $output = "store-package\Yonsei-Paper-Downloader_${{ inputs.version }}_x64.msix"
+          & $makeAppx.FullName pack /d "msix-package" /p $output /o
+
+      - name: Upload Store submission package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yonsei-Paper-Downloader-Store-MSIX
+          path: store-package/*.msix
+          if-no-files-found: error
+          retention-days: 30
