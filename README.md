@@ -293,11 +293,16 @@ python download_papers.py
 다음부터는 아래 순서만 반복하면 됩니다.
 
 1. **YSVPN 연결**
-2. CMD 실행
-3. 저장소 폴더로 이동
-4. `powershell` 입력
-5. 새 DOI 목록을 복사
-6. 아래 두 명령 실행
+2. Windows 키를 누르고 `cmd`를 검색해 **명령 프롬프트** 실행
+3. 아래 두 줄을 CMD에 한 줄씩 입력
+
+```cmd
+cd %USERPROFILE%\Research-paper-crawling-method-for-yonsei-university
+powershell
+```
+
+4. Excel·메모장 등에서 새 DOI 목록 전체를 **Ctrl+C**로 복사
+5. 아래 두 줄을 PowerShell에 한 줄씩 입력
 
 ```powershell
 Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
