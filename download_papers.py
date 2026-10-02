@@ -12,6 +12,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+
+import requests
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +48,9 @@ def load_env(path: str = ".env") -> None:
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        if key:
+            # The local .env is the explicit configuration for this CLI run.
+            # Always prefer it over stale process/user environment variables.
             os.environ[key] = value
 
 
@@ -144,31 +148,182 @@ def _looks_like_pdf(headers: dict[str, str], body: bytes) -> bool:
     return "application/pdf" in content_type or body.startswith(b"%PDF")
 
 
+def _sanitize_url(url: str) -> str:
+    """Remove query/fragment so diagnostics never expose signed URL parameters."""
+    parts = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+
+
+def _body_excerpt(body: bytes | str, limit: int = 500) -> str:
+    if isinstance(body, bytes):
+        text = body.decode("utf-8", errors="replace")
+    else:
+        text = body
+    return " ".join(text.strip().split())[:limit]
+
+
+def _wiley_failure_result(
+    doi: str,
+    status: int,
+    headers: dict[str, str],
+    body: bytes | str,
+    *,
+    final_url: str = "",
+    redirect_history: list[str] | None = None,
+) -> DownloadResult:
+    redirects = redirect_history or []
+    diagnostic = f"HTTP {status}"
+    if final_url:
+        diagnostic += f"; final={_sanitize_url(final_url)}"
+    if redirects:
+        diagnostic += f"; redirects={' -> '.join(redirects)}"
+
+    content_type = headers.get("content-type", "")
+    if content_type:
+        diagnostic += f"; content-type={content_type}"
+
+    if status == 400:
+        state = "forbidden"
+        message = "Wiley TDM API 400: 요청에 TDM Client Token이 전달되지 않았습니다."
+    elif status == 403:
+        state = "forbidden"
+        message = (
+            "Wiley TDM API 403: Wiley가 TDM Token을 invalid/unregistered로 거부했습니다. "
+            "앱에 저장된 Token이 최신 값인지 확인하거나 Wiley에서 Token을 재발급하세요."
+        )
+    elif status == 404:
+        state = "not_found"
+        message = (
+            "Wiley TDM API 404: DOI 또는 해당 콘텐츠의 접근 권한을 확인해야 합니다. "
+            "기관 구독 콘텐츠라면 기관 네트워크에서 요청해야 합니다."
+        )
+    elif status == 429:
+        state = "rate_limited"
+        message = "Wiley TDM API 429: 요청 횟수 제한에 걸렸습니다."
+        retry_after = headers.get("retry-after")
+        if retry_after:
+            message += f" Retry-After={retry_after}"
+    else:
+        state = "error"
+        message = f"Wiley TDM API 오류: HTTP {status}"
+
+    excerpt = _body_excerpt(body)
+    if excerpt:
+        message += f" | {excerpt}"
+
+    message += f" | {diagnostic}"
+    return DownloadResult(doi, "wiley", state, "", message)
+
+
 def download_wiley(
     doi: str,
     token: str,
     output_path: Path,
 ) -> DownloadResult:
+    """Download a Wiley PDF using the request pattern of Wiley's official TDM client."""
     encoded = urllib.parse.quote(doi, safe="")
     url = WILEY_API.format(doi=encoded)
+    token = token.strip()
 
-    status, headers, body = _request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
+    if not token:
+        return DownloadResult(
+            doi,
+            "wiley",
+            "forbidden",
+            "",
+            "Wiley TDM Token이 비어 있습니다.",
+        )
+
+    session = requests.Session()
+    session.headers.update(
+        {
             "Wiley-TDM-Client-Token": token,
-            "Accept": "application/pdf",
-        },
+            "User-Agent": USER_AGENT,
+            "Connection": "keep-alive",
+        }
     )
 
-    if status == 200 and _looks_like_pdf(headers, body):
+    response = None
+    try:
+        response = session.get(
+            url,
+            allow_redirects=True,
+            stream=True,
+            timeout=(15, 90),
+        )
+        status = response.status_code
+        headers = {k.lower(): v for k, v in response.headers.items()}
+        redirect_history = [
+            f"{item.status_code}:{_sanitize_url(item.url)}"
+            for item in response.history
+        ]
+
+        if status != 200:
+            return _wiley_failure_result(
+                doi,
+                status,
+                headers,
+                response.text,
+                final_url=response.url,
+                redirect_history=redirect_history,
+            )
+
         tmp = output_path.with_suffix(output_path.suffix + ".part")
-        tmp.write_bytes(body)
-        tmp.replace(output_path)
-        return DownloadResult(doi, "wiley", "downloaded", str(output_path), "정상 다운로드")
+        try:
+            with tmp.open("wb") as handle:
+                for chunk in response.iter_content(chunk_size=1024 * 1024):
+                    if chunk:
+                        handle.write(chunk)
 
-    return _failure_result(doi, "wiley", status, headers, body)
+            with tmp.open("rb") as handle:
+                magic = handle.read(4)
 
+            if "application/pdf" not in headers.get("content-type", "").lower() and magic != b"%PDF":
+                excerpt = _body_excerpt(tmp.read_bytes()[:1000])
+                tmp.unlink(missing_ok=True)
+                return DownloadResult(
+                    doi,
+                    "wiley",
+                    "error",
+                    "",
+                    (
+                        "Wiley TDM API가 HTTP 200을 반환했지만 PDF가 아닙니다. "
+                        f"content-type={headers.get('content-type', '')}; "
+                        f"final={_sanitize_url(response.url)}"
+                        + (f" | {excerpt}" if excerpt else "")
+                    ),
+                )
+
+            tmp.replace(output_path)
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
+
+        redirect_note = (
+            f", redirect {len(response.history)}회"
+            if response.history
+            else ""
+        )
+        return DownloadResult(
+            doi,
+            "wiley",
+            "downloaded",
+            str(output_path),
+            f"정상 다운로드 (Wiley TDM API{redirect_note})",
+        )
+
+    except requests.RequestException as exc:
+        return DownloadResult(
+            doi,
+            "wiley",
+            "error",
+            "",
+            f"Wiley 네트워크 요청 실패: {exc}",
+        )
+    finally:
+        if response is not None:
+            response.close()
+        session.close()
 
 def download_elsevier(
     doi: str,
@@ -203,32 +358,50 @@ def _failure_result(
     headers: dict[str, str],
     body: bytes,
 ) -> DownloadResult:
-    if status == 403:
-        state = "forbidden"
-        message = "기관 구독 또는 API 권한이 확인되지 않음"
-    elif status == 404:
-        state = "not_found"
-        message = "DOI를 찾지 못함"
-    elif status == 429:
-        state = "rate_limited"
-        retry_after = headers.get("retry-after")
-        message = "API 호출 한도 초과"
-        if retry_after:
-            message += f" (Retry-After: {retry_after})"
-    elif status in (401,):
-        state = "forbidden"
-        message = "API 키 또는 토큰 인증 실패"
-    else:
-        state = "error"
-        message = f"HTTP {status}"
+    excerpt = _body_excerpt(body)
 
-    if body and len(body) < 1000:
-        try:
-            text = body.decode("utf-8", errors="replace").strip()
-            if text:
-                message += f" | {text[:300]}"
-        except Exception:
-            pass
+    if publisher == "elsevier":
+        if status == 403:
+            state = "forbidden"
+            message = (
+                "Elsevier Article Retrieval API returned 403. "
+                "API key/resource/account configuration 또는 institutional authorization 확인이 필요합니다."
+            )
+        elif status == 401:
+            state = "forbidden"
+            message = "Elsevier API Key 인증에 실패했습니다."
+        elif status == 404:
+            state = "not_found"
+            message = "Elsevier Article Retrieval API에서 DOI를 찾지 못했습니다."
+        elif status == 429:
+            state = "rate_limited"
+            message = "Elsevier API 요청 횟수 제한에 걸렸습니다."
+        else:
+            state = "error"
+            message = f"Elsevier Article Retrieval API 오류: HTTP {status}"
+    else:
+        if status == 403:
+            state = "forbidden"
+            message = "접근이 거부되었습니다."
+        elif status == 401:
+            state = "forbidden"
+            message = "API 인증에 실패했습니다."
+        elif status == 404:
+            state = "not_found"
+            message = "DOI를 찾지 못했습니다."
+        elif status == 429:
+            state = "rate_limited"
+            message = "API 요청 횟수 제한에 걸렸습니다."
+        else:
+            state = "error"
+            message = f"HTTP {status}"
+
+    retry_after = headers.get("retry-after")
+    if status == 429 and retry_after:
+        message += f" Retry-After={retry_after}"
+
+    if excerpt:
+        message += f" | {excerpt}"
 
     return DownloadResult(doi, publisher, state, "", message)
 
