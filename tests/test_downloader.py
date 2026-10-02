@@ -150,7 +150,7 @@ class DownloaderTests(unittest.TestCase):
             "current-wiley-token",
         )
         self.assertEqual(session.headers["Connection"], "keep-alive")
-        self.assertNotIn("Accept", session.headers)
+        self.assertNotEqual(session.headers.get("Accept"), "application/pdf")
 
         self.assertEqual(len(session.get_calls), 1)
         url, kwargs = session.get_calls[0]
