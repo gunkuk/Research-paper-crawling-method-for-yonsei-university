@@ -184,7 +184,26 @@ ELSEVIER_API_KEY
 
 ## 6. DOI 목록 넣기
 
-DOI는 **한 줄에 하나씩** 준비합니다.
+저장소 안에 **`doi_list.txt` 파일이 이미 준비되어 있습니다.**  
+이 파일을 열어서 **아래쪽 DOI 입력 구역만 바꾸면 됩니다.**
+
+### 6-1. 저장소 폴더 열기
+
+PowerShell에 아래 명령을 입력하고 Enter를 누릅니다.
+
+```powershell
+explorer .
+```
+
+현재 저장소 폴더가 파일 탐색기로 열립니다.
+
+### 6-2. `doi_list.txt` 열기
+
+1. 열린 폴더에서 **`doi_list.txt`** 파일을 더블클릭합니다.
+2. 파일 위쪽의 설명문은 **절대 지우지 않습니다.**
+3. **"아래부터 DOI 입력"**이라고 적힌 구역 아래에만 DOI를 넣습니다.
+4. DOI는 **한 줄에 하나씩** 입력합니다.
+5. 저장하고 파일을 닫습니다.
 
 예:
 
@@ -193,20 +212,8 @@ DOI는 **한 줄에 하나씩** 준비합니다.
 10.1002/asi.10389
 ```
 
-### 가장 쉬운 방법
-
-1. Excel, 메모장 등에서 DOI 목록을 **한 줄에 하나씩** 준비합니다.
-2. DOI 목록 전체를 선택해서 **Ctrl+C**로 복사합니다.
-3. 다시 PowerShell 창으로 돌아옵니다.
-4. 아래 한 줄을 붙여넣고 Enter를 누릅니다.
-
-```powershell
-Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
-```
-
-끝입니다. 복사해 둔 DOI 목록이 자동으로 `doi_list.txt`에 저장됩니다.
-
-> DOI 앞에 `https://doi.org/`가 붙어 있어도 프로그램이 자동으로 처리합니다.
+> 파일 위쪽 설명문은 모두 `#`으로 시작하며 프로그램이 자동으로 무시합니다.  
+> DOI 앞에 `https://doi.org/`가 붙어 있어도 자동으로 처리합니다.
 
 ---
 
@@ -302,13 +309,15 @@ python download_papers.py
 
 ### DOI 목록을 바꾸고 싶은 경우
 
-새 DOI 목록을 한 줄씩 준비해 **Ctrl+C**로 복사한 뒤 다시 아래 명령을 실행합니다.
+PowerShell에서 아래 명령으로 저장소 폴더를 엽니다.
 
 ```powershell
-Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
+explorer .
 ```
 
-그다음 다시:
+`doi_list.txt`를 열고, **파일 위쪽 설명문은 그대로 둔 채 아래 DOI 입력 구역만 수정**합니다.
+
+저장한 뒤 다시 실행합니다.
 
 ```powershell
 python download_papers.py
@@ -331,11 +340,16 @@ cd %USERPROFILE%\Research-paper-crawling-method-for-yonsei-university
 powershell
 ```
 
-4. Excel·메모장 등에서 새 DOI 목록 전체를 **Ctrl+C**로 복사
-5. 아래 두 줄을 PowerShell에 한 줄씩 입력
+4. 아래 명령으로 저장소 폴더 열기
 
 ```powershell
-Get-Clipboard | Set-Content doi_list.txt -Encoding UTF8
+explorer .
+```
+
+5. `doi_list.txt`를 열어 **위쪽 설명문은 그대로 두고 아래 DOI 입력 구역만 수정**
+6. 저장한 뒤 PowerShell에서 실행
+
+```powershell
 python download_papers.py
 ```
 
