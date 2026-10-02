@@ -120,33 +120,62 @@ powershell
 Copy-Item .env.example .env
 ```
 
-### 5-3. Wiley Token과 Elsevier API Key 입력
+### 5-3. Wiley Token 입력
 
-아래 **세 줄 전체를 한 번에 복사해서 PowerShell에 붙여넣고 Enter**를 누릅니다.
+**중요: 아래 명령은 한 번에 여러 줄을 붙여넣지 말고, 한 줄씩 실행합니다.**
+
+먼저 아래 한 줄을 PowerShell에 붙여넣고 Enter를 누릅니다.
 
 ```powershell
 $wiley = Read-Host "Wiley TDM Token을 붙여넣고 Enter"
-$elsevier = Read-Host "Elsevier API Key를 붙여넣고 Enter"
-"WILEY_TDM_TOKEN=$wiley`nELSEVIER_API_KEY=$elsevier" | Set-Content .env -Encoding UTF8
 ```
 
-먼저 다음 문구가 나타납니다.
+다음 문구가 나타나면:
 
 ```text
 Wiley TDM Token을 붙여넣고 Enter:
 ```
 
-→ **2단계에서 발급받은 Wiley Token을 붙여넣고 Enter**
+→ **2단계에서 발급받은 Wiley TDM Token 값만 붙여넣고 Enter**를 누릅니다.
 
-그다음:
+> `Read-Host "..."`의 따옴표 안에는 Token을 넣는 것이 아닙니다. 안내 문구는 그대로 두고, Enter 후 나타나는 입력란에 Token을 붙여넣습니다.
+
+### 5-4. Elsevier API Key 입력
+
+아래 한 줄을 붙여넣고 Enter를 누릅니다.
+
+```powershell
+$elsevier = Read-Host "Elsevier API Key를 붙여넣고 Enter"
+```
+
+다음 문구가 나타나면:
 
 ```text
 Elsevier API Key를 붙여넣고 Enter:
 ```
 
-→ **3단계에서 발급받은 Elsevier API Key를 붙여넣고 Enter**
+→ **3단계에서 발급받은 Elsevier API Key 값만 붙여넣고 Enter**를 누릅니다.
 
-이제 API 설정은 끝입니다.
+### 5-5. 입력한 값을 .env 파일에 저장
+
+마지막으로 아래 **한 줄만** 붙여넣고 Enter를 누릅니다.
+
+```powershell
+@("WILEY_TDM_TOKEN=$wiley","ELSEVIER_API_KEY=$elsevier") | Set-Content .env -Encoding UTF8
+```
+
+설정이 정상적으로 저장됐는지 **키 이름만** 확인하려면 아래 명령을 실행합니다.
+
+```powershell
+Get-Content .env | ForEach-Object { ($_ -split '=')[0] }
+```
+
+아래 두 줄이 나오면 정상입니다.
+
+```text
+WILEY_TDM_TOKEN
+ELSEVIER_API_KEY
+```
 
 > Token과 API Key는 비밀번호처럼 취급하십시오. 생성된 `.env` 파일은 GitHub에 올라가지 않도록 설정되어 있습니다.
 
