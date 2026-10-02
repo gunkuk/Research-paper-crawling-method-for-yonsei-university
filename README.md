@@ -1,4 +1,4 @@
-# 연세대학교 VPN 기반 Wiley·Elsevier 논문 자동 다운로드
+# 연세대학교 VPN 기반 학술논문 자동 다운로드
 
 DOI 목록을 입력하면 **Wiley TDM API**와 **Elsevier Article Retrieval API**를 이용해 접근 권한이 있는 논문의 원문 PDF를 자동으로 저장하는 도구입니다.
 
