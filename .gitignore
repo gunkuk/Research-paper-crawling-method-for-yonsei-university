@@ -1,5 +1,9 @@
 __pycache__/
 *.py[cod]
+*.spec
+build/
+dist/
+installer/*.exe
 .env
 downloads/
 download_results.csv
